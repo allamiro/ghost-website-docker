@@ -1,0 +1,41 @@
+# docker-compose.yml
+version: "3"
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 10a6f7428d19623e80be79875ee2d0f7eef8a29e4892146d170db61c4eed4bbe
+      MYSQL_DATABASE: ghostdata
+      MYSQL_USER: ghost
+      MYSQL_PASSWORD: 10a6f7428d19623e80be79875ee2d0f7eef8a29e4892146d170db61c4eed4bbe
+    volumes:
+      - ./dbdata:/var/lib/mysql:Z
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-pchange_me_root"]
+      interval: 2s
+      retries: 60
+      start_period: 30s
+  ghost:
+    image: ghost:latest
+    container_name: ghost
+    hostname: ghost
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "80:2368"                        # HTTP only
+    environment:
+      NODE_ENV: production
+      url: http://ghost.local.domain     # set to your domain/IP if different
+      database__client: mysql
+      database__connection__host: mysql
+      database__connection__port: 3306
+      database__connection__user: ghost
+      database__connection__password: 10a6f7428d19623e80be79875ee2d0f7eef8a29e4892146d170db61c4eed4bbe
+      database__connection__database: ghostdata
+    volumes:
+      - ./ghost/content:/var/lib/ghost/content:Z
+      - ./ghost/config.production.json:/var/lib/ghost/config.production.json:Z
